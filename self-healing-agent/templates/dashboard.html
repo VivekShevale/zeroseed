@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Healing Agent Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        h1 { margin-bottom: 10px; }
+        .card { background: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .stat { text-align: center; padding: 15px; background: #ecf0f1; border-radius: 5px; }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        .stat-label { color: #7f8c8d; }
+        .service-list { list-style: none; }
+        .service-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .health-up { color: green; }
+        .health-down { color: red; }
+        .health-degraded { color: orange; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; margin-right: 10px; cursor: pointer; }
+        .btn-start { background: #27ae60; color: white; border: none; }
+        .btn-stop { background: #e74c3c; color: white; border: none; }
+        .log-entry { padding: 5px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 0.9em; }
+        .log-success { color: green; }
+        .log-error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Self-Healing Agent Dashboard</h1>
+            <p>Autonomous monitoring and remediation system</p>
+            <div id="agentStatus">Loading...</div>
+        </header>
+
+        <div class="controls">
+            <button class="btn-start" onclick="startAgent()">▶ Start Agent</button>
+            <button class="btn-stop" onclick="stopAgent()">⏹ Stop Agent</button>
+            <button onclick="refreshDashboard()">🔄 Refresh</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Agent Status</h2>
+                <div id="agentStats"></div>
+            </div>
+
+            <div class="card">
+                <h2>🖥️ Services</h2>
+                <ul class="service-list" id="serviceList"></ul>
+            </div>
+
+            <div class="card">
+                <h2>📈 Metrics History</h2>
+                <canvas id="metricsChart" height="200"></canvas>
+            </div>
+
+            <div class="card">
+                <h2>📝 Action Log</h2>
+                <div id="actionLog"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Action Success Rate</h2>
+            <canvas id="successChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let metricsChart = null;
+        let successChart = null;
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/dashboard');
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update agent status
+            const statusEl = document.getElementById('agentStatus');
+            statusEl.textContent = data.agent_running ? '🟢 Running' : '🔴 Stopped';
+            statusEl.style.color = data.agent_running ? 'green' : 'red';
+
+            // Update stats
+            const statsHtml = `
+                <div class="stat">
+                    <div class="stat-value">${data.services.length}</div>
+                    <div class="stat-label">Services</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${data.recent_actions.length}</div>
+                    <div class="stat-label">Actions Today</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${data.catalog.length}</div>
+                    <div class="stat-label">Catalog Entries</div>
+                </div>
+            `;
+            document.getElementById('agentStats').innerHTML = statsHtml;
+
+            // Update services list
+            const serviceList = document.getElementById('serviceList');
+            serviceList.innerHTML = data.services.map(service => `
+                <li class="service-item">
+                    <strong>${service.service_id}</strong><br>
+                    <small>${service.service_url}</small>
+                </li>
+            `).join('');
+
+            // Update action log
+            const actionLog = document.getElementById('actionLog');
+            actionLog.innerHTML = data.recent_actions.map(action => `
+                <div class="log-entry ${action.success ? 'log-success' : 'log-error'}">
+                    ${new Date(action.timestamp).toLocaleTimeString()} - 
+                    ${action.service_id}: ${action.action} for ${action.issue} 
+                    (${action.success ? '✅' : '❌'})
+                </div>
+            `).join('');
+
+            // Update charts
+            updateCharts(data);
+        }
+
+        function updateCharts(data) {
+            // Metrics chart
+            const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+            
+            if (metricsChart) {
+                metricsChart.destroy();
+            }
+
+            // Get recent metrics for chart
+            const recentMetrics = data.recent_actions.filter(a => a.type === 'metrics').slice(-20);
+            const labels = recentMetrics.map((_, i) => `T-${i}`);
+            const memoryData = recentMetrics.map(m => m.metrics?.memory || 0);
+            const cpuData = recentMetrics.map(m => m.metrics?.cpu || 0);
+
+            metricsChart = new Chart(metricsCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Memory %',
+                            data: memoryData,
+                            borderColor: 'rgb(255, 99, 132)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'CPU %',
+                            data: cpuData,
+                            borderColor: 'rgb(54, 162, 235)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Success chart
+            const successCtx = document.getElementById('successChart').getContext('2d');
+            
+            if (successChart) {
+                successChart.destroy();
+            }
+
+            // Calculate success rates by action
+            const actions = {};
+            data.recent_actions.forEach(action => {
+                if (action.type === 'action') {
+                    if (!actions[action.action]) {
+                        actions[action.action] = { total: 0, success: 0 };
+                    }
+                    actions[action.action].total++;
+                    if (action.success) actions[action.action].success++;
+                }
+            });
+
+            const actionNames = Object.keys(actions);
+            const successRates = actionNames.map(action => {
+                const stats = actions[action];
+                return stats.total > 0 ? (stats.success / stats.total) * 100 : 0;
+            });
+
+            successChart = new Chart(successCtx, {
+                type: 'bar',
+                data: {
+                    labels: actionNames,
+                    datasets: [{
+                        label: 'Success Rate %',
+                        data: successRates,
+                        backgroundColor: successRates.map(rate => 
+                            rate > 80 ? 'rgba(75, 192, 192, 0.6)' : 
+                            rate > 50 ? 'rgba(255, 205, 86, 0.6)' : 
+                            'rgba(255, 99, 132, 0.6)'
+                        )
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        async function startAgent() {
+            try {
+                const response = await fetch('/agent/start', { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+                fetchData();
+            } catch (error) {
+                alert('Error starting agent');
+            }
+        }
+
+        async function stopAgent() {
+            try {
+                const response = await fetch('/agent/stop', { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+                fetchData();
+            } catch (error) {
+                alert('Error stopping agent');
+            }
+        }
+
+        function refreshDashboard() {
+            fetchData();
+        }
+
+        // Initialize
+        fetchData();
+        setInterval(fetchData, 5000); // Refresh every 5 seconds
+    </script>
+</body>
+</html>

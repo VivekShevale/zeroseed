@@ -1,3 +1,14 @@
-flask
-requests
+# requirements.txt
+Flask
+flask-CORS
+flask-Limiter
 pymongo
+requests
+python-dotenv
+schedule
+redis
+prometheus-flask-exporter
+structlog
+healthcheck
+celery
+pytest

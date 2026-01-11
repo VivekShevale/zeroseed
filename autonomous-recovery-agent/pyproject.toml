@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-recovery-agent"
+version = "3.1.4"
+description = "Autonomous monitoring and recovery agent for Flask + MongoDB applications"
+readme = "README.md"
+authors = [
+    { name = "Autonomous Recovery Team", email = "support@autonomous-recovery.com" }
+]
+license = { text = "MIT" }
+keywords = ["flask", "mongodb", "monitoring", "recovery", "autonomous", "self-healing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: System :: Monitoring",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "Flask>=2.0.0",
+    "pymongo>=4.0.0",
+    "psutil>=5.9.0",
+    "Flask>=2.0.0",
+    "pydantic>=2.0.0",
+    "requests>=2.28.0",
+    "python-dotenv>=0.20.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "watchdog>=3.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+]
+web = [
+    "flask-cors>=3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/autonomous-recovery-agent"
+Documentation = "https://autonomous-recovery-agent.readthedocs.io/"
+Repository = "https://github.com/yourusername/autonomous-recovery-agent"
+Issues = "https://github.com/yourusername/autonomous-recovery-agent/issues"
+
+[project.scripts]
+recovery-agent = "autonomous_recovery_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["autonomous_recovery_agent*"]
+
+[tool.setuptools.package-data]
+autonomous_recovery_agent = ["templates/*.html"]
+
+[tool.black]
+line-length = 88
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88

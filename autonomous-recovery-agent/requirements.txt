@@ -1,0 +1,7 @@
+Flask
+pymongo
+psutil
+pydantic
+requests
+python-dotenv
+click

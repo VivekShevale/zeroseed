@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Recovery Agent - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; 
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 40px 0; }
+        h1 { font-size: 3em; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 25px; }
+        .card h2 { margin-bottom: 15px; font-size: 1.5em; }
+        .status { display: flex; align-items: center; margin-bottom: 10px; }
+        .status-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; }
+        .status-healthy { background: #4CAF50; }
+        .status-degraded { background: #FFC107; }
+        .status-unhealthy { background: #FF5722; }
+        .status-critical { background: #F44336; }
+        .metric { margin: 10px 0; }
+        .metric label { display: block; font-size: 0.9em; opacity: 0.8; }
+        .metric value { font-size: 1.2em; font-weight: bold; }
+        .actions { display: flex; gap: 10px; margin-top: 20px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; background: #667eea; color: white; 
+                 cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #5a67d8; }
+        .history { max-height: 300px; overflow-y: auto; }
+        .history-item { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .history-time { font-size: 0.8em; opacity: 0.7; }
+        .history-action { font-weight: bold; }
+        .history-success { color: #4CAF50; }
+        .history-failed { color: #F44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Autonomous Recovery Agent</h1>
+            <p class="subtitle">Self-healing for your Flask + MongoDB applications</p>
+        </header>
+        
+        <div class="dashboard">
+            <!-- Service Health Card -->
+            <div class="card">
+                <h2>Service Health</h2>
+                <div id="service-status">
+                    <p>Loading...</p>
+                </div>
+                <div id="service-metrics"></div>
+            </div>
+            
+            <!-- Database Health Card -->
+            <div class="card">
+                <h2>Database Health</h2>
+                <div id="database-status">
+                    <p>Loading...</p>
+                </div>
+                <div id="database-metrics"></div>
+            </div>
+            
+            <!-- Quick Actions Card -->
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <div class="actions">
+                    <button onclick="triggerRecovery('service')">Recover Service</button>
+                    <button onclick="triggerRecovery('database')">Recover Database</button>
+                    <button onclick="refreshData()">Refresh</button>
+                </div>
+            </div>
+            
+            <!-- Recovery History Card -->
+            <div class="card">
+                <h2>Recovery History</h2>
+                <div id="recovery-history" class="history">
+                    <p>Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function fetchData() {
+            try {
+                // Fetch status
+                const statusRes = await fetch('/api/status');
+                const statusData = await statusRes.json();
+                
+                // Fetch health
+                const healthRes = await fetch('/api/health');
+                const healthData = await healthRes.json();
+                
+                // Fetch history
+                const historyRes = await fetch('/api/recovery/history');
+                const historyData = await historyRes.json();
+                
+                updateDashboard(statusData, healthData, historyData);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+        
+        function updateDashboard(status, health, history) {
+            // Update service health
+            const serviceStatus = document.getElementById('service-status');
+            const serviceMetrics = document.getElementById('service-metrics');
+            
+            if (health.health?.service) {
+                const s = health.health.service;
+                serviceStatus.innerHTML = `
+                    <div class="status">
+                        <div class="status-indicator status-${s.status}"></div>
+                        <span>${s.status.toUpperCase()}</span>
+                    </div>
+                    ${s.error_message ? `<p>${s.error_message}</p>` : ''}
+                `;
+                
+                if (s.metrics) {
+                    serviceMetrics.innerHTML = `
+                        <div class="metric">
+                            <label>CPU Usage</label>
+                            <value>${s.metrics.cpu_percent?.toFixed(1) || 'N/A'}%</value>
+                        </div>
+                        <div class="metric">
+                            <label>Memory Usage</label>
+                            <value>${s.metrics.memory_mb?.toFixed(1) || 'N/A'} MB</value>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Update database health
+            const dbStatus = document.getElementById('database-status');
+            const dbMetrics = document.getElementById('database-metrics');
+            
+            if (health.health?.database) {
+                const d = health.health.database;
+                dbStatus.innerHTML = `
+                    <div class="status">
+                        <div class="status-indicator status-${d.status}"></div>
+                        <span>${d.status.toUpperCase()}</span>
+                    </div>
+                    ${d.error_message ? `<p>${d.error_message}</p>` : ''}
+                `;
+                
+                if (d.metrics) {
+                    dbMetrics.innerHTML = `
+                        <div class="metric">
+                            <label>Connection Time</label>
+                            <value>${d.metrics.connection_time_ms?.toFixed(1) || 'N/A'} ms</value>
+                        </div>
+                        <div class="metric">
+                            <label>Active Connections</label>
+                            <value>${d.metrics.active_connections || 'N/A'}</value>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Update recovery history
+            const historyEl = document.getElementById('recovery-history');
+            if (history.history?.length > 0) {
+                historyEl.innerHTML = history.history.map(item => `
+                    <div class="history-item">
+                        <div class="history-time">${new Date(item.timestamp * 1000).toLocaleTimeString()}</div>
+                        <div class="history-action ${item.success ? 'history-success' : 'history-failed'}">
+                            ${item.action}: ${item.message}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                historyEl.innerHTML = '<p>No recovery history</p>';
+            }
+        }
+        
+        async function triggerRecovery(component) {
+            if (!confirm(`Trigger recovery for ${component}?`)) return;
+            
+            try {
+                const res = await fetch('/api/recovery/trigger', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        component: component,
+                        reason: 'Manual trigger from dashboard'
+                    })
+                });
+                
+                const data = await res.json();
+                alert(data.result?.message || 'Recovery triggered');
+                refreshData();
+            } catch (error) {
+                alert('Error triggering recovery: ' + error.message);
+            }
+        }
+        
+        function refreshData() {
+            fetchData();
+        }
+        
+        // Initial load
+        fetchData();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(fetchData, 10000);
+    </script>
+</body>
+</html>

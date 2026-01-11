@@ -1,685 +1,837 @@
-Collecting workspace information# Self-Healing Web Infrastructure Agent
+Collecting workspace information# Autonomous Recovery Agent 🛡️
 
-A comprehensive autonomous monitoring and remediation system for web services. The agent automatically detects anomalies, makes intelligent decisions, and executes corrective actions to maintain service health.
+A comprehensive autonomous monitoring and recovery system for Flask + MongoDB applications. Automatically detects and recovers from service crashes, database failures, and resource exhaustion without human intervention.
 
 ## 📋 Table of Contents
 
 - Overview
 - Features
 - Architecture
-- Prerequisites
+- Quick Start
 - Installation
 - Configuration
 - Usage
 - API Documentation
+- Components
 - Dashboard
+- Troubleshooting
 - Development
-- Testing
-- Project Structure
+- Contributing
 
 ## 🎯 Overview
 
-The Self-Healing Agent is an autonomous infrastructure management system that:
+The Autonomous Recovery Agent is a self-healing infrastructure management system designed specifically for Flask + MongoDB applications. It continuously monitors service health and database connectivity, automatically detects failures, and executes intelligent recovery actions to maintain high availability.
 
-- **Monitors** service health continuously
-- **Detects** anomalies in real-time using statistical analysis
-- **Decides** optimal remediation actions based on a learned catalog
-- **Executes** corrective actions automatically
-- **Learns** from outcomes to improve future decisions
-
-This system enables zero-touch incident response and reduces manual intervention by up to 80%.
+**Key Capabilities:**
+- ✅ Automatic service restart on crashes
+- ✅ Database connection recovery and failover
+- ✅ Real-time resource monitoring (CPU, memory, disk)
+- ✅ Intelligent traffic throttling during overload
+- ✅ Maintenance mode management
+- ✅ Configuration hot-reload with file watching
+- ✅ Web-based monitoring dashboard
+- ✅ RESTful API for programmatic control
+- ✅ Zero-configuration deployment
 
 ## ✨ Features
 
-### Core Capabilities
+### Core Monitoring
+- **Service Health Checks** - Continuous Flask process monitoring
+- **Database Monitoring** - MongoDB connection health and performance tracking
+- **Disk Usage Monitoring** - Automatic cleanup of old logs and temporary files
+- **Traffic Analysis** - Request rate monitoring and throttling
 
-- **Autonomous Monitoring**: Continuous health checks every 10 seconds (configurable)
-- **Intelligent Anomaly Detection**: Multi-metric analysis with statistical scoring
-- **Adaptive Learning**: Confidence scoring that improves with each action
-- **Automatic Remediation**: Execute fixes without human intervention
-- **Issue-Action Catalog**: Extensible mapping of problems to solutions
-- **Incident Tracking**: Full lifecycle management from detection to resolution
+### Automatic Recovery
+- **Service Restart** - Automatically restart failed Flask services
+- **Database Recovery** - Reconnect to MongoDB with exponential backoff
+- **Resource Cleanup** - Free disk space by removing old files
+- **Graceful Degradation** - Traffic throttling during high load
 
-### Supported Actions
-
-- Service restart
-- Cache clearing
-- Horizontal scaling (scale up/down)
-- Version rollback
-- Custom webhooks
-- Manual notifications
-
-### Metrics Monitored
-
-- Service health status (UP/DOWN/DEGRADED)
-- CPU usage
-- Memory usage
-- Error rate
-- Response latency
-- Custom metrics via API
+### Management Features
+- **Maintenance Mode** - Schedule maintenance windows with graceful transitions
+- **Configuration Management** - Hot-reload YAML/JSON configurations
+- **Web UI Dashboard** - Real-time monitoring and manual controls
+- **REST API** - Full programmatic control
+- **CLI Tools** - Command-line interface for manual operations
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Self-Healing Agent                        │
+│          Autonomous Recovery Agent                          │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐   │
-│  │  Monitor    │  │   Decision   │  │   Action         │   │
-│  │  Service    │→ │   Engine     │→ │   Executor       │   │
-│  └─────────────┘  └──────────────┘  └──────────────────┘   │
-│         ↓                ↓                    ↓              │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ Service      │  │ Database     │  │ Disk & Traffic   │  │
+│  │ Monitor      │  │ Monitor      │  │ Monitor          │  │
+│  └──────────────┘  └──────────────┘  └──────────────────┘  │
+│         │                 │                    │             │
+│         └─────────────────┼────────────────────┘             │
+│                          │                                   │
+│                    ┌─────▼──────┐                            │
+│                    │ Recovery   │                            │
+│                    │ Engine     │                            │
+│                    └─────┬──────┘                            │
+│                          │                                   │
+│         ┌────────────────┼────────────────┐                  │
+│         │                │                │                  │
+│    ┌────▼────┐    ┌─────▼─────┐    ┌────▼──────┐           │
+│    │ Restart │    │ Throttle  │    │ Maintenance
+│    │ Service │    │ Traffic   │    │ Mode       │           │
+│    └─────────┘    └───────────┘    └───────────┘           │
+│                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │         Learning Engine (Confidence Scoring)        │   │
+│  │  Configuration Manager (Hot-Reload)                 │   │
 │  └─────────────────────────────────────────────────────┘   │
-│         ↓              ↓              ↓                      │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │      MongoDB (Memory, Catalog, Incidents, Metrics)  │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                               │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
-        ↓                           ↑
-    Web Services              API Endpoints
+         │                          │
+    ┌────▼──────┐          ┌───────▼────┐
+    │ Flask App │          │ Web UI / API│
+    └───────────┘          └────────────┘
 ```
 
-### Key Components
+## 🚀 Quick Start
 
-#### 1. **Service Monitor** (monitor.py)
-- Collects metrics from registered services
-- Validates metric thresholds
-- Caches recent metrics for analysis
-
-#### 2. **Decision Engine** (`src/agent/decision_engine.py`)
-- Analyzes anomalies using Z-score and statistical methods
-- Selects optimal actions from catalog
-- Considers action confidence scores and recent failures
-
-#### 3. **Action Executor** (action_executor.py)
-- Executes HTTP-based remediation actions
-- Handles timeouts and retries
-- Logs all execution details
-
-#### 4. **Learning Engine** (learning_engine.py)
-- Updates confidence scores based on outcomes
-- Tracks action success rates
-- Identifies improving/declining trends
-
-#### 5. **Database Layer** (database.py)
-- MongoDB connection management
-- Collection indexing for performance
-- Transaction support
-
-## 📦 Prerequisites
-
-- **Python** 3.8+
-- **MongoDB** 4.0+
-- **Docker** (optional, for containerization)
-
-### System Requirements
-
-- 2+ CPU cores
-- 4GB+ RAM
-- 1GB+ disk space
-
-## 🚀 Installation
-
-### 1. Clone Repository
+### 1. Installation
 
 ```bash
-git clone <repository-url>
-cd self-healing-agent
-```
+# Clone or download the project
+cd autonomous-recovery-agent
 
-### 2. Install Dependencies
-
-```bash
 # Create virtual environment
 python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# Install requirements
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Setup MongoDB
+### 2. Setup MongoDB
 
-**Option A: Local Installation**
 ```bash
+# Option A: Local installation
 # macOS
 brew install mongodb-community
+brew services start mongodb-community
 
 # Ubuntu
 sudo apt-get install mongodb
+sudo systemctl start mongodb
 
-# Windows
-# Download from https://www.mongodb.com/try/download/community
-```
-
-**Option B: Docker**
-```bash
+# Option B: Docker
 docker run -d -p 27017:27017 --name mongodb mongo:latest
 ```
 
-### 4. Configure Environment
+### 3. Configure Environment
 
-Create `.env` file in project root:
+Create `.env` file in the project root:
 
 ```bash
-# Flask
-SECRET_KEY=your-secret-key-change-in-production
-DEBUG=False
-HOST=0.0.0.0
-PORT=5000
+# Flask Configuration
+FLASK_APP=app.py
+FLASK_ENV=development
 
 # MongoDB
-MONGO_URI=mongodb://localhost:27017/
-MONGO_DB=self_healing_agent
+MONGODB_URL=mongodb://localhost:27017/recovery_test
 
 # Agent Configuration
-CHECK_INTERVAL=10
-MAX_RETRIES=3
-RETRY_DELAY=2
+CHECK_INTERVAL=30
+ENABLE_WEB_UI=true
+WEB_UI_PORT=8081
 
-# Thresholds
-MEMORY_THRESHOLD=90
-LATENCY_THRESHOLD=1500
-ERROR_RATE_THRESHOLD=0.3
-CPU_THRESHOLD=90
-RESPONSE_TIME_THRESHOLD=2000
+# Service Configuration
+MAX_SERVICE_MEMORY_MB=1024
+MAX_SERVICE_CPU_PERCENT=90
 
-# API Security
-API_KEY_HEADER=X-API-Key
-API_KEYS=your-api-key-1,your-api-key-2
+# Database Configuration
+MAX_DB_CONNECTION_TIME_MS=200
+MONGODB_RECOVERY_TIMEOUT=30
 
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=agent.log
+# Disk Configuration
+DISK_CLEANUP_THRESHOLD=0.80
+DISK_CRITICAL_THRESHOLD=0.95
+MAX_LOG_AGE_DAYS=7
+MAX_TEMP_AGE_HOURS=24
+
+# Traffic Configuration
+DEFAULT_RPS=100
+OVERLOAD_THRESHOLD=0.8
+```
+
+### 4. Basic Usage
+
+```python
+from flask import Flask
+from autonomous_recovery_agent import AutonomousRecoveryAgent, AgentConfig
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Create agent with configuration
+agent = AutonomousRecoveryAgent(
+    flask_app=app,
+    mongodb_url="mongodb://localhost:27017/myapp",
+    config=AgentConfig(
+        check_interval=30,
+        auto_recovery=True,
+        enable_web_ui=True,
+        web_ui_port=8081
+    )
+)
+
+# Start the agent
+agent.start()
+
+# Your Flask routes work as normal
+@app.route('/api/data')
+def get_data():
+    return {"status": "ok"}
+
+if __name__ == '__main__':
+    app.run()
+```
+
+### 5. Access Dashboard
+
+Navigate to: **http://localhost:8081**
+
+## 📦 Installation
+
+### Requirements
+
+- Python 3.8+
+- MongoDB 4.0+
+- pip (Python package manager)
+
+### Install Package
+
+```bash
+# From source
+pip install -e .
+
+# Or install directly
+pip install -r requirements.txt
+```
+
+### Verify Installation
+
+```bash
+# Check if agent can be imported
+python -c "from autonomous_recovery_agent import AutonomousRecoveryAgent; print('✓ Installation successful')"
+
+# Check version
+python -c "from autonomous_recovery_agent import __version__; print(__version__)"
 ```
 
 ## ⚙️ Configuration
 
-### Service Registration
-
-Register services in settings.py or via API:
+### AgentConfig Options
 
 ```python
-SERVICES = [
-    {
-        "service_id": "payment-api",
-        "name": "Payment Service",
-        "service_url": "http://localhost:6000",
-        "metrics_url": "http://localhost:6000/health",
-        "health_endpoint": "/health",
-        "restart_endpoint": "/agent/restart",
-        "enabled": True,
-        "tags": ["critical", "api"]
-    }
-]
+@dataclass
+class AgentConfig:
+    # Monitoring
+    check_interval: int = 30                          # Health check interval (seconds)
+    max_service_memory_mb: int = 1024                 # Memory threshold
+    max_service_cpu_percent: int = 90                 # CPU threshold
+    max_db_connection_time_ms: int = 200              # Database connection timeout
+    
+    # Recovery
+    auto_recovery: bool = True                        # Enable automatic recovery
+    recovery_cooldown_seconds: int = 60               # Cooldown between recovery attempts
+    max_recovery_attempts: int = 3                    # Max attempts per incident
+    
+    # Disk Management
+    disk_cleanup_threshold: float = 0.80              # Disk usage threshold (0-1)
+    disk_critical_threshold: float = 0.95             # Critical threshold
+    max_log_age_days: int = 7                         # Log retention days
+    max_temp_age_hours: int = 24                      # Temp file age threshold
+    
+    # Maintenance
+    maintenance_mode: bool = True                     # Enable maintenance mode
+    maintenance_status_file: str = "maintenance_status.json"
+    
+    # Traffic Throttling
+    traffic_throttling: bool = True                   # Enable traffic throttling
+    default_rps: int = 100                            # Default requests per second
+    overload_threshold: float = 0.8                   # Throttle threshold
+    recovery_threshold: float = 0.5                   # Recovery threshold
+    
+    # Web UI
+    enable_web_ui: bool = True                        # Enable dashboard
+    web_ui_port: int = 8081                           # Dashboard port
+    
+    # API
+    enable_api: bool = True                           # Enable REST API
 ```
 
-### Default Issue-Action Mappings
+### Configuration Files
 
-The agent comes with predefined mappings:
+The agent can watch and hot-reload configuration files:
 
-| Issue | Action | Auto | Confidence |
-|-------|--------|------|-----------|
-| SERVICE_DOWN | restart | Yes | 1.0 |
-| MEMORY_PRESSURE | scale_up | Yes | 0.8 |
-| HIGH_LATENCY | clear_cache | Yes | 0.8 |
-| HIGH_ERROR_RATE | rollback | Yes | 0.6 |
-| HIGH_CPU | scale_up | Yes | 0.8 |
+**config/database.yaml**
+```yaml
+mongodb:
+  url: mongodb://localhost:27017/myapp
+  connection_timeout_ms: 200
+  max_retries: 3
+```
+
+**config/monitoring.yaml**
+```yaml
+monitoring:
+  check_interval: 30
+  service:
+    memory_threshold_mb: 1024
+    cpu_threshold_percent: 90
+  database:
+    slow_query_ms: 1000
+```
 
 ## 🎮 Usage
 
-### Starting the Agent
-
-#### Method 1: Web Interface
+### Method 1: Web UI
 
 ```bash
-python run.py
+# Start the agent (includes web UI)
+python app.py
+
+# Access dashboard at http://localhost:8081
 ```
 
-Navigate to `http://localhost:5000` to control the agent via dashboard.
+Features:
+- Real-time service and database health
+- Recovery history
+- Manual recovery triggers
+- System metrics
 
-#### Method 2: API
-
-```bash
-# Start the agent
-curl -X POST http://localhost:5000/agent/start
-
-# Stop the agent
-curl -X POST http://localhost:5000/agent/stop
-
-# Check status
-curl http://localhost:5000/status
-```
-
-#### Method 3: Mock Service Testing
+### Method 2: REST API
 
 ```bash
-# Terminal 1: Start agent
-python run.py
+# Get agent status
+curl http://localhost:5000/health
 
-# Terminal 2: Start mock service
-python mock_service.py
+# Get recovery status
+curl http://localhost:5000/recovery/status
 
-# Terminal 3: Run tests
-python test_agent.py
-```
-
-### Manual Operations
-
-#### Ingest Metrics
-
-```bash
-curl -X POST http://localhost:5000/agent/metrics \
+# Trigger manual recovery
+curl -X POST http://localhost:5000/recovery/trigger \
   -H "Content-Type: application/json" \
-  -d '{
-    "service_id": "payment-api",
-    "metrics": {
-      "health": "DEGRADED",
-      "cpu": 85,
-      "memory": 92,
-      "latency": 1800,
-      "error_rate": 0.25
-    }
-  }'
+  -d '{"component": "database", "reason": "Manual test"}'
 ```
 
-#### Add Custom Issue-Action
+### Method 3: Programmatic Control
 
-```bash
-curl -X POST http://localhost:5000/agent/add_issue \
-  -H "Content-Type: application/json" \
-  -d '{
-    "issue": "DATABASE_SLOW",
-    "action": "restart_db",
-    "auto": true,
-    "confidence": 0.7
-  }'
+```python
+from autonomous_recovery_agent import AutonomousRecoveryAgent
+
+# Get current status
+status = agent.get_status()
+print(f"Agent running: {status['running']}")
+print(f"Services monitored: {status['services_monitored']}")
+
+# Manually trigger recovery
+result = agent.trigger_recovery(
+    component="database",
+    reason="Testing recovery"
+)
+print(f"Recovery triggered: {result['success']}")
+
+# Stop agent
+agent.stop()
 ```
 
-#### Execute Manual Action
+### Method 4: CLI
 
 ```bash
-curl -X POST http://localhost:5000/api/v1/manual/action \
-  -H "X-API-Key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "service_id": "payment-api",
-    "action": "restart",
-    "parameters": {}
-  }'
+# Start agent
+recovery-agent start --config config/settings.yaml
+
+# Get status
+recovery-agent status
+
+# Trigger recovery
+recovery-agent trigger --component database --reason "Manual trigger"
+
+# Show version
+recovery-agent version
 ```
 
 ## 📡 API Documentation
 
-### Health & Status Endpoints
+### Health Endpoints
 
 #### GET `/health`
-System health check
+System health check endpoint.
 
 **Response:**
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "database": "connected",
-  "agent_running": true,
-  "version": "1.0.0"
+  "service": "flask",
+  "recovery_agent": "active",
+  "agent_status": {
+    "running": true,
+    "services_monitored": 1,
+    "total_actions": 5,
+    "timestamp": 1234567890
+  }
 }
 ```
 
-#### GET `/status`
-Agent operational status
+#### GET `/recovery/status`
+Get detailed recovery agent status.
 
 **Response:**
 ```json
 {
-  "agent_running": true,
-  "services_monitored": 5,
-  "total_actions": 127,
-  "successful_actions": 115,
-  "active_incidents": 2,
-  "catalog_entries": 8,
-  "database": "connected",
-  "timestamp": "2024-01-15T10:30:00Z"
+  "status": "ok",
+  "agent": {
+    "running": true,
+    "monitoring_active": true,
+    "service_health": "connected",
+    "database_health": "connected",
+    "recovery_attempts": 2,
+    "last_check": "2024-01-15T10:30:00Z"
+  }
 }
 ```
 
-### Service Management API (`/api/v1`)
+### Recovery Endpoints
 
-#### GET `/services`
-List all registered services
-
-**Headers:** `X-API-Key: your-api-key`
+#### GET `/recovery/health`
+Get detailed health information.
 
 **Response:**
 ```json
 {
-  "services": [...],
-  "count": 5
+  "status": "ok",
+  "health": {
+    "service": {
+      "status": "connected",
+      "cpu_percent": 25.5,
+      "memory_mb": 256.8,
+      "timestamp": 1234567890
+    },
+    "database": {
+      "status": "connected",
+      "connection_time_ms": 45,
+      "is_reachable": true,
+      "timestamp": 1234567890
+    }
+  }
 }
 ```
 
-#### POST `/services`
-Register new service
-
-**Headers:** `X-API-Key: your-api-key`
+#### POST `/recovery/trigger`
+Manually trigger recovery for a component.
 
 **Request:**
 ```json
 {
-  "service_id": "user-service",
-  "name": "User Service",
-  "service_url": "http://localhost:7000",
-  "metrics_url": "http://localhost:7000/health"
+  "component": "database",
+  "reason": "Manual recovery test"
 }
 ```
 
-#### PUT `/services/{service_id}`
-Update service configuration
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Recovery triggered",
+  "recovery_id": "db_1705318200",
+  "action": "reconnect"
+}
+```
 
-#### DELETE `/services/{service_id}`
-Unregister service
+### Admin Endpoints
 
-### Metrics Ingestion
-
-#### POST `/api/v1/metrics`
-Ingest service metrics
-
-**Headers:** `X-API-Key: your-api-key`
+#### POST `/admin/maintenance/enable`
+Enable maintenance mode.
 
 **Request:**
 ```json
 {
-  "service_id": "payment-api",
-  "metrics": {
-    "health": "UP",
-    "cpu": 45,
-    "memory": 65,
-    "error_rate": 0.02
-  },
-  "timestamp": "2024-01-15T10:30:00Z"
+  "level": "degraded",
+  "reason": "Scheduled maintenance",
+  "duration_minutes": 30
 }
 ```
 
-### Catalog Management
+#### POST `/admin/maintenance/disable`
+Disable maintenance mode.
 
-#### GET `/api/v1/catalog`
-List all issue-action mappings
+**Request:**
+```json
+{
+  "schedule_id": "maintenance_1705318200"
+}
+```
 
-#### POST `/api/v1/catalog`
-Add new catalog entry
+#### GET `/admin/maintenance/status`
+Get maintenance status.
 
-#### DELETE `/api/v1/catalog/{issue}/{action}`
-Remove catalog entry
+**Response:**
+```json
+{
+  "current_level": "normal",
+  "schedules": {...}
+}
+```
 
-### Action History & Incidents
+## 🖥️ Components
 
-#### GET `/api/v1/actions/history`
-Action execution history
+### Service Monitor
+Monitors Flask service health by:
+- Tracking process status
+- Collecting CPU and memory metrics
+- Detecting service crashes
+- Recording health history
 
-**Query Parameters:**
-- `limit`: Results per page (default: 100)
-- `offset`: Pagination offset (default: 0)
+**File:** `autonomous_recovery_agent/monitoring/service_monitor.py`
 
-#### GET `/api/v1/incidents`
-Incident records
+### Database Monitor
+Monitors MongoDB connectivity:
+- Executes ping commands
+- Measures connection time
+- Detects connection failures
+- Tracks reachability status
 
-#### POST `/api/v1/manual/action`
-Execute manual action
+**File:** `autonomous_recovery_agent/monitoring/database_monitor.py`
 
-### Agent Control
+### Disk Monitor
+Manages disk usage:
+- Monitors disk space
+- Cleans old log files
+- Removes temporary files
+- Rotates log files
 
-#### POST `/api/v1/agent/start`
-Start monitoring
+**File:** `autonomous_recovery_agent/monitoring/disk_monitor.py`
 
-#### POST `/api/v1/agent/stop`
-Stop monitoring
+### Recovery Engine
+Executes recovery actions:
+- Service restart
+- Database reconnection
+- Traffic throttling
+- Resource cleanup
 
-#### GET `/api/v1/agent/status`
-Agent operational status
+**File:** `autonomous_recovery_agent/recovery/engine.py`
+
+### Configuration Manager
+Manages configuration with hot-reload:
+- Loads YAML/JSON configs
+- Watches for file changes
+- Triggers callbacks on updates
+- Maintains change history
+
+**File:** `autonomous_recovery_agent/config_manager.py`
+
+### Maintenance Manager
+Handles maintenance windows:
+- Schedules maintenance periods
+- Returns maintenance pages
+- Manages maintenance levels
+- Triggers callbacks
+
+**File:** `autonomous_recovery_agent/maintenance/manager.py`
+
+### Traffic Throttler
+Controls traffic during overload:
+- Monitors request rates
+- Implements throttling rules
+- Supports multiple throttle levels
+- Dynamic threshold adjustment
+
+**File:** `autonomous_recovery_agent/traffic/throttler.py`
 
 ## 📊 Dashboard
 
-### Web Interface
+Access the web dashboard at **http://localhost:8081**
 
-Access dashboard at `http://localhost:5000/dashboard`
+### Dashboard Features
 
-**Features:**
-- Real-time agent status
-- Service health visualization
-- Action execution timeline
-- Success rate metrics
-- Incident tracking
-- Catalog management
+- **Service Health** - Real-time service status with metrics
+- **Database Health** - MongoDB connection status
+- **Quick Actions** - Trigger manual recovery
+- **Recovery History** - View past recovery attempts
+- **System Metrics** - CPU, memory, disk usage
+- **Maintenance Status** - Current maintenance level
 
-### Dashboard API
+### Dashboard Endpoints
 
-#### GET `/dashboard/api/status`
-Overall system status
+- `/api/status` - Agent status
+- `/api/health` - Health information
+- `/api/recovery/history` - Recovery history
+- `/api/recovery/trigger` - Trigger recovery
+- `/admin/maintenance/status` - Maintenance status
 
-#### GET `/dashboard/api/services`
-Services data for visualization
+## 🔍 Monitoring
 
-#### GET `/dashboard/api/incidents`
-Active incidents
+### Health Check States
 
-#### GET `/dashboard/api/catalog`
-Catalog entries grouped by issue
+| State | Description | Action |
+|-------|-------------|--------|
+| **connected** | Service/DB healthy | Continue monitoring |
+| **degraded** | Slow response times | Monitor closely |
+| **unhealthy** | Frequent errors | Prepare recovery |
+| **disconnected** | Unable to reach | Initiate recovery |
+| **critical** | Complete failure | Emergency recovery |
 
-#### GET `/dashboard/api/metrics/{service_id}`
-Historical metrics for a service
+### Recovery Workflow
 
-#### GET `/dashboard/api/actions/stats`
-Action success statistics
+```
+Anomaly Detected
+       ↓
+Check Cooldown Period
+       ↓
+Attempt Recovery
+       ↓
+Monitor for Success
+       ↓
+Update History & Stats
+```
 
-## 🧪 Testing
+## 🐛 Troubleshooting
 
-### Run Test Suite
+### Agent Not Starting
+
+**Problem:** Agent fails to start with connection error
+
+**Solutions:**
+1. Verify MongoDB is running: `mongosh`
+2. Check MongoDB URI in config
+3. Verify network connectivity
+4. Check logs: `tail -f agent.log`
 
 ```bash
-# Install test dependencies
-pip install -r requirements-dev.txt
-
-# Run all tests
-python test_agent.py
-
-# Run specific test
-python test_service.py
+# Test MongoDB connection
+python -c "from pymongo import MongoClient; MongoClient('mongodb://localhost:27017/').admin.command('ping')"
 ```
 
-### Test the Mock Service
+### Service Not Being Detected
 
-```bash
-# Terminal 1
-python run.py
+**Problem:** Agent can't find Flask service
 
-# Terminal 2
-python mock_service.py
+**Solutions:**
+1. Verify Flask process is running
+2. Check process name matches configuration
+3. Verify service health endpoint works: `curl http://localhost:5000/health`
+4. Check agent logs for errors
 
-# Terminal 3
-python test_agent.py
+### High Memory Usage
+
+**Problem:** Agent consuming too much memory
+
+**Solutions:**
+1. Increase `check_interval` (monitoring frequency)
+2. Reduce `max_log_age_days` to clean up faster
+3. Enable disk cleanup in config
+4. Check for memory leaks in logs
+
+### Database Recovery Failing
+
+**Problem:** Agent can't reconnect to MongoDB
+
+**Solutions:**
+1. Verify MongoDB is accessible
+2. Check connection string format
+3. Verify authentication credentials
+4. Check firewall rules
+5. Review MongoDB logs
+
+### Configuration Not Reloading
+
+**Problem:** Configuration changes not taking effect
+
+**Solutions:**
+1. Verify `watch_config_files: true` in config
+2. Check file permissions on config files
+3. Verify file format (YAML/JSON valid)
+4. Check agent logs for config errors
+5. Restart agent if needed
+
+## 📈 Performance Tuning
+
+### Reduce CPU Usage
+
+```yaml
+check_interval: 60          # Increase monitoring interval
+max_retries: 2              # Reduce retry attempts
+log_rotation_size_mb: 500   # Larger log files
 ```
 
-### Integration Testing
+### Improve Recovery Speed
 
-```bash
-python test_real_website.py
+```yaml
+recovery_cooldown_seconds: 30   # Shorter cooldown
+max_recovery_attempts: 5        # More attempts
+db_connection_timeout_ms: 100   # Faster detection
 ```
 
-This test monitors and responds to real website incidents.
+### Optimize Disk Usage
 
-## 📁 Project Structure
-
-```
-self-healing-agent/
-├── config/
-│   └── settings.py              # Application configuration
-├── src/
-│   ├── agent/
-│   │   ├── agent.py             # Main agent orchestrator
-│   │   ├── monitor.py           # Service monitoring
-│   │   ├── decision_engine.py    # Decision making
-│   │   ├── action_executor.py    # Action execution
-│   │   └── learning_engine.py    # Confidence scoring
-│   ├── api/
-│   │   ├── routes.py            # API endpoints
-│   │   └── schemas.py           # Request/response schemas
-│   ├── models/
-│   │   ├── database.py          # MongoDB operations
-│   │   ├── repositories.py      # Data access layer
-│   │   └── schemas.py           # Data models
-│   ├── services/
-│   │   └── mock_service.py      # Mock service for testing
-│   ├── utils/
-│   │   ├── logger.py            # Logging setup
-│   │   ├── metrics.py           # Metrics calculations
-│   │   └── validators.py        # Input validation
-│   └── web/
-│       └── dashboard.py         # Dashboard routes
-├── templates/
-│   └── dashboard.html           # Web dashboard
-├── run.py                       # Main Flask application
-├── agent_app.py                 # Alternative agent app
-├── mock_service.py              # Standalone mock service
-├── test_agent.py                # Agent tests
-├── test_service.py              # Service tests
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
-```
-
-## 🔧 Development
-
-### Code Structure
-
-**Models** (`src/models/`)
-- database.py: MongoDB connection and operations
-- repositories.py: Data access patterns
-- schemas.py: Pydantic models for type safety
-
-**Agent Core** (`src/agent/`)
-- Modular design with single responsibility
-- Event-driven architecture
-- Async/concurrent execution support
-
-**API** (`src/api/`)
-- RESTful endpoints with Flask Blueprint
-- API key authentication
-- Request validation via Pydantic schemas
-
-**Utils** (`src/utils/`)
-- Reusable utility functions
-- Statistical analysis for anomaly detection
-- Input validation and sanitization
-
-### Adding New Services
-
-1. Register service via API or config
-2. Implement required endpoints:
-   - `GET /health` - Health check
-   - `POST /agent/restart` - Restart command
-
-3. Add custom thresholds (optional):
-```python
-"custom_thresholds": {
-    "memory": 85,
-    "latency": 1200,
-    "error_rate": 0.2
-}
-```
-
-### Creating Custom Actions
-
-1. Add action to `ActionType` enum in schemas.py
-2. Implement in `ActionExecutor.execute()` method
-3. Add to catalog with confidence score
-
-## 📈 Monitoring & Metrics
-
-### Key Metrics
-
-- **Action Success Rate**: Percentage of successful remediations
-- **Detection Latency**: Time from anomaly to detection
-- **Resolution Time**: Time from detection to resolution
-- **Confidence Score**: Action effectiveness (0-1)
-
-### Viewing Metrics
-
-```bash
-# Via API
-curl http://localhost:5000/api/v1/actions/history
-
-# Via Dashboard
-http://localhost:5000/dashboard
+```yaml
+disk_cleanup_threshold: 0.85    # More aggressive cleanup
+max_log_age_days: 3             # Clean logs faster
+max_temp_age_hours: 12          # Clean temp files faster
 ```
 
 ## 🔒 Security
 
-### API Authentication
+### API Security
 
-All API endpoints require `X-API-Key` header:
-
-```bash
-curl -H "X-API-Key: your-api-key" http://localhost:5000/api/v1/services
-```
+- All API endpoints require authentication
+- Use strong API keys in production
+- Rotate keys regularly
+- Enable HTTPS in production
 
 ### Best Practices
 
-- Change `SECRET_KEY` in production
-- Use environment variables for sensitive data
-- Enable HTTPS in production
-- Rotate API keys regularly
-- Limit service connectivity to internal networks
+1. Store secrets in environment variables
+2. Use strong database passwords
+3. Restrict network access to agent
+4. Enable audit logging
+5. Monitor failed recovery attempts
 
-## 🐛 Troubleshooting
+## 🧪 Testing
 
-### MongoDB Connection Issues
-
-```bash
-# Check MongoDB is running
-mongosh
-
-# Verify URI in .env
-MONGO_URI=mongodb://localhost:27017/
-```
-
-### Agent Not Starting
+### Run Tests
 
 ```bash
-# Check logs
-tail -f agent.log
+# Install test dependencies
+pip install -r requirements.txt
 
-# Verify services are accessible
-curl http://localhost:6000/health
+# Run test script
+python test_recovery.py
+
+# Run with verbose output
+python -m pytest tests/ -v
 ```
 
-### High Memory Usage
+### Testing Recovery
 
-- Reduce `CHECK_INTERVAL`
-- Clean up old incidents and metrics
-- Limit metrics retention period
+```bash
+# Terminal 1: Start agent
+python app.py
 
-## 📝 Logging
+# Terminal 2: Monitor dashboard
+open http://localhost:8081
 
-Logs are written to `agent.log` with JSON format:
+# Terminal 3: Simulate failure
+# Stop MongoDB, then restart it
 
-```json
-{
-  "timestamp": "2024-01-15T10:30:00Z",
-  "level": "INFO",
-  "component": "agent",
-  "message": "Service restart successful",
-  "service_id": "payment-api"
-}
+# Watch recovery in action!
 ```
+
+## 🔧 Development
+
+### Project Structure
+
+```
+autonomous-recovery-agent/
+├── autonomous_recovery_agent/
+│   ├── __init__.py                 # Package exports
+│   ├── agent.py                    # Main agent class
+│   ├── config.py                   # Configuration classes
+│   ├── config_manager.py           # Configuration management
+│   ├── cli.py                      # CLI interface
+│   ├── flask_integration.py        # Flask integration
+│   ├── web_ui.py                   # Web dashboard
+│   ├── monitoring/
+│   │   ├── __init__.py
+│   │   ├── service_monitor.py      # Service health monitoring
+│   │   ├── database_monitor.py     # Database health monitoring
+│   │   └── disk_monitor.py         # Disk usage monitoring
+│   ├── recovery/
+│   │   ├── __init__.py
+│   │   └── engine.py               # Recovery execution
+│   ├── maintenance/
+│   │   └── manager.py              # Maintenance mode
+│   ├── traffic/
+│   │   ├── __init__.py
+│   │   └── throttler.py            # Traffic throttling
+│   ├── templates/
+│   │   └── dashboard.html          # Web UI template
+│   ├── utils/
+│   │   └── logging.py              # Logging utilities
+│   └── flask_mongodb_app/
+│       ├── app.py                  # Example Flask app
+│       └── examples/
+│           └── basic_usage.py      # Usage example
+├── tests/
+├── .env.example                    # Environment template
+├── requirements.txt                # Dependencies
+├── setup.py                        # Package setup
+└── README.md                       # This file
+```
+
+### Creating Custom Monitors
+
+```python
+from autonomous_recovery_agent.monitoring.service_monitor import ServiceMonitor
+
+class CustomMonitor:
+    def __init__(self, logger):
+        self.logger = logger
+    
+    def check_health(self):
+        """Return health status"""
+        return {
+            "status": "connected",
+            "custom_metric": 42,
+            "timestamp": time.time()
+        }
+    
+    def start(self):
+        """Start monitoring"""
+        pass
+    
+    def stop(self):
+        """Stop monitoring"""
+        pass
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+### Development Guidelines
+
+- Follow PEP 8 style guide
+- Add docstrings to functions
+- Include unit tests
+- Update documentation
+- Add type hints
+
+## 📝 License
+
+This project is licensed under the MIT License - see LICENSE file for details.
+
+## 📞 Support
+
+For issues and questions:
+
+- Open an issue on GitHub
+- Check troubleshooting section
+- Review agent logs
+- Check configuration
+
+## 🎓 Examples
+
+### Example 1: E-Commerce API
+
+See `autonomous_recovery_agent/flask_mongodb_app/app.py` for a complete e-commerce API example with automatic recovery.
+
+### Example 2: Basic Integration
+
+See `autonomous_recovery_agent/flask_mongodb_app/examples/basic_usage.py` for a minimal setup example.
 
 ## 🚀 Deployment
 
@@ -687,51 +839,24 @@ Logs are written to `agent.log` with JSON format:
 
 ```dockerfile
 FROM python:3.9-slim
-
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
 COPY . .
-
-CMD ["python", "run.py"]
+CMD ["python", "-m", "autonomous_recovery_agent"]
 ```
 
 ### Environment Variables
 
 ```bash
-docker run -e MONGO_URI=mongodb://mongo:27017/ \
-           -e API_KEYS=your-api-key \
-           -p 5000:5000 \
-           self-healing-agent
+MONGODB_URL=mongodb://mongo:27017/app
+FLASK_ENV=production
+ENABLE_WEB_UI=true
+WEB_UI_PORT=8081
 ```
-
-## 📞 Support
-
-For issues and feature requests, open an issue in the repository.
-
-## 📄 License
-
-Specify your license here.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow:
-
-1. Create feature branch: `git checkout -b feature/amazing-feature`
-2. Commit changes: `git commit -m 'Add amazing feature'`
-3. Push to branch: `git push origin feature/amazing-feature`
-4. Open Pull Request
-
-## 🎓 Learning Resources
-
-- [MongoDB Documentation](https://docs.mongodb.com/)
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [Pydantic Documentation](https://docs.pydantic.dev/)
-- [RESTful API Design](https://restfulapi.net/)
 
 ---
 
-**Version:** 1.0.0  
-**Last Updated:** 2024-01-15  
-**Maintainers:** Self-Healing Agent Team
+**Built with ❤️ for reliable Flask + MongoDB applications**
+
+Version: 3.0.4 | Last Updated: 2025
